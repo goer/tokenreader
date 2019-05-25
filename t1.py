@@ -104,7 +104,7 @@ def readImages() :
     y=[]
     for f in files :
         print("Reading ",f)
-        fn = f.split("/")[1]
+        fn = f.split("\\")[1]
         fn = fn.split(".png")[0]
         fn = fn.split("_")
         number = fn[2]    
@@ -140,7 +140,7 @@ def detect(img) :
 
 
 #train()
-readImages()
+#readImages()
 detect(0)
 
 
