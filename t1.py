@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 import glob
+from matplotlib import pyplot as plt
 
 def getFiles(folder):
     files = glob.glob(folder+"/*")
@@ -97,10 +98,53 @@ def train() :
     # np.savetxt('digits.txt',np.array(x),delimiter=" ", fmt="%s")
     # np.savetxt('numbers.txt',np.array(y),delimiter=" ", fmt="%s")
 
+def imageToBW(img):
+
+    grayImage = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    (thresh, blackAndWhiteImage) = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+ 
+    return blackAndWhiteImage
+
+def imageResize(img):
+
+    w,h = np.shape(img)  
+    #print("Shape image: ",(w,h))
+    # r = 0.2
+    # nw = int(w*r)
+    # nh = int(h*r)
+    nw,nh = (30,100)
+    img_small = cv2.resize(img,(nw,nh))
+    w,h = np.shape(img_small)  
+    #print("Shape image_small: ",(w,h))
+
+    return img_small
+
+def loadImage(fn):
+
+    print("Loading image: ",fn)
+    img = cv2.imread(fn) 
+    return readImage(img)
+
+def readImage(img,isdebug=False):
+
+    img = imageToBW(img)
+    img_small = imageResize(img)
+    #cv2.imwrite(fn+"_small.png", img_small)
+
+    if isdebug:
+        plt.imshow(img_small)
+        plt.show()
+
+    img_array = np.asarray(img_small,np.float32)
+    img_array = img_array.reshape(-1)
+
+    return img_array
 
 def readImages() :
     files = getFiles("chars")
-    x=np.empty((0,10,3))
+    #x=np.empty((0,10,3))
+    # x=np.empty((100))
+    x=[]
     y=[]
     for f in files :
         print("Reading ",f)
@@ -108,24 +152,22 @@ def readImages() :
         fn = fn.split(".png")[0]
         fn = fn.split("_")
         number = fn[2]    
-        img = cv2.imread(f) 
-        w,h,z = np.shape(img)  
-        r = 0.2
-        nw = int(w*r)
-        nh = int(h*r)
-        img_small = cv2.resize(img,(nw,nh))
-        img_array = np.asarray(img_small)
-        #img_array = img_small.reshape((1,100))
-        x = np.append(x,img_array)
-        print("Number :"+number);
-        print("SHAPE : ",np.shape(img_array))
+
+        img_array = loadImage(f)
+        
+        #print("Number :"+number);
+        #print("SHAPE : ",np.shape(img_array))
+        #print(">>> :",img_array)
+        
+        x.append(img_array)
         y.append(number)
 
-    #xa = np.array(x)
+    xa = np.array(x,np.float32)
     ya = np.array(y,np.float32)
-    ya = ya.reshape((ya.size,1))
-    np.savetxt('digits.txt',x)
+    np.savetxt('digits.txt',xa)
     np.savetxt('numbers.txt',ya)
+
+    return xa,ya
 
 
 def detect(img) :
@@ -136,12 +178,17 @@ def detect(img) :
 
    # model = cv2.KNearest()
     model = cv2.ml.KNearest_create()
-    model.train(samples,responses)
+    model.train(samples,cv2.ml.ROW_SAMPLE,responses)
+
+    # ret, results, neighbours ,dist = knn.findNearest(newcomer, 3)
+    # print( "result:  {}\n".format(results) )
+    # print( "neighbours:  {}\n".format(neighbours) )
+    # print( "distance:  {}\n".format(dist) )
 
 
 #train()
 #readImages()
-detect(0)
+#detect(0)
 
 
 # if not os.path.exists("chars"):
